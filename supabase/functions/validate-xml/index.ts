@@ -69,27 +69,24 @@ Deno.serve(async (req: Request) => {
     }
 
     const corrDocRefIdElements = doc.querySelectorAll("CorrDocRefId");
-    const corrDocRefIds: string[] = [];
 
-    corrDocRefIdElements.forEach((element) => {
-      const value = element.textContent?.trim();
-      if (value) {
-        corrDocRefIds.push(value);
-      }
-    });
+    for (let i = 0; i < corrDocRefIdElements.length; i++) {
+      const element = corrDocRefIdElements[i];
+      const corrDocRefId = element.textContent?.trim();
 
-    for (const corrDocRefId of corrDocRefIds) {
-      const { data, error } = await supabase
-        .from("aeoi_record")
-        .select("doc_ref_id")
-        .eq("doc_ref_id", corrDocRefId)
-        .maybeSingle();
+      if (corrDocRefId) {
+        const { data } = await supabase
+          .from("aeoi_record")
+          .select("doc_ref_id")
+          .eq("doc_ref_id", corrDocRefId)
+          .maybeSingle();
 
-      if (error || !data) {
-        errors.push({
-          message: `CorrDocRefId "${corrDocRefId}" does not match any previously uploaded DocRefId.`,
-          code: "80002",
-        });
+        if (!data) {
+          errors.push({
+            message: `CorrDocRefId "${corrDocRefId}" does not match any previously uploaded DocRefId.`,
+            code: "80002",
+          });
+        }
       }
     }
 
