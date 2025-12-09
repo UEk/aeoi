@@ -76,40 +76,6 @@ export function FileOverview() {
     try {
       console.log('Processing file:', fileId);
 
-      const { data: errorCheck } = await supabase
-        .from('validation_error')
-        .select('*')
-        .eq('file_id', fileId)
-        .eq('level', 'ERROR');
-
-      const hasBlockingErrors = errorCheck && errorCheck.length > 0;
-
-      if (hasBlockingErrors) {
-        console.log('Validation failed: blocking errors detected');
-        await supabase
-          .from('file_receipt')
-          .update({ status: 'FAILED', updated_at: new Date().toISOString() })
-          .eq('file_id', fileId);
-
-        const { data: caseData } = await supabase
-          .from('aeoi_case')
-          .select('case_id')
-          .eq('file_id', fileId)
-          .maybeSingle();
-
-        if (caseData) {
-          await supabase.from('aeoi_task').insert({
-            case_id: caseData.case_id,
-            type: 'VALIDATION_ERROR',
-            status: 'OPEN',
-            comments: `File has ${errorCheck.length} blocking validation error(s). File cannot be processed.`,
-          });
-        }
-
-        loadFiles();
-        return;
-      }
-
       await supabase
         .from('file_receipt')
         .update({ status: 'VALIDATING', updated_at: new Date().toISOString() })
@@ -169,6 +135,21 @@ export function FileOverview() {
             enrichStatus = 'CONVERTED';
           }
 
+          const { data: duplicateRecordCheck } = await supabase
+            .from('aeoi_record')
+            .select('record_id')
+            .eq('doc_ref_id', docRefId)
+            .maybeSingle();
+
+          if (duplicateRecordCheck) {
+            await supabase.from('validation_error').insert({
+              file_id: fileId,
+              code: '8000',
+              message: `Duplicate DocRefId detected: ${docRefId} (Validation Rule 8000 - Blocking)`,
+              level: 'ERROR',
+            });
+          }
+
           const { data: recordData, error: recordError } = await supabase
             .from('aeoi_record')
             .insert({
@@ -216,10 +197,18 @@ export function FileOverview() {
         }
       }
 
+      const { data: allErrors } = await supabase
+        .from('validation_error')
+        .select('*')
+        .eq('file_id', fileId)
+        .eq('level', 'ERROR');
+
+      const hasBlockingErrors = allErrors && allErrors.length > 0;
+
       await supabase
         .from('file_receipt')
         .update({
-          status: 'COMPLETED',
+          status: hasBlockingErrors ? 'FAILED' : 'COMPLETED',
           updated_at: new Date().toISOString()
         })
         .eq('file_id', fileId);
@@ -228,8 +217,26 @@ export function FileOverview() {
         correlation_id: correlationId,
         actor_id: 'anonymous',
         action: 'TRANSFORM',
-        details: { fileId, recordsCreated: accountReports.length },
+        details: { fileId, recordsCreated: accountReports.length, hasErrors: hasBlockingErrors },
       });
+
+      if (hasBlockingErrors) {
+        const { data: caseData } = await supabase
+          .from('aeoi_case')
+          .select('case_id')
+          .eq('file_id', fileId)
+          .maybeSingle();
+
+        if (caseData) {
+          const errorSummary = allErrors.map(e => `${e.code}: ${e.message}`).join('\n');
+          await supabase.from('aeoi_task').insert({
+            case_id: caseData.case_id,
+            type: 'VALIDATION_ERROR',
+            status: 'OPEN',
+            comments: `File has ${allErrors.length} blocking validation error(s):\n${errorSummary}`,
+          });
+        }
+      }
 
       console.log('Processing complete for file:', fileId);
       loadFiles();
