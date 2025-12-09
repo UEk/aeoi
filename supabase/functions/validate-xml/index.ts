@@ -53,37 +53,30 @@ Deno.serve(async (req: Request) => {
     }
 
     if (!doc.querySelector("parsererror")) {
-      const crsBody = doc.querySelector("CRS_OECD, MessageBody") ||
-                      doc.querySelector("[*|local-name()='CRS_OECD'], [*|local-name()='MessageBody']") ||
-                      doc.documentElement;
+      const rootElement = doc.documentElement;
+      const isCrsOecd = rootElement?.localName === "CRS_OECD";
+      const isMessageBody = rootElement?.localName === "MessageBody";
 
-      if (!crsBody || (!crsBody.localName?.includes("CRS_OECD") && !crsBody.localName?.includes("MessageBody"))) {
+      if (!isCrsOecd && !isMessageBody) {
         errors.push({
           message: "Missing required CRS_OECD or MessageBody root element (XSD Validation Rule 50002)",
           code: "50002",
         });
       }
 
-      const messageSpec = doc.querySelector("MessageSpec") ||
-                          Array.from(doc.getElementsByTagName("*")).find(el => el.localName === "MessageSpec");
+      const messageSpec = Array.from(doc.getElementsByTagName("*")).find(el => el.localName === "MessageSpec");
       if (!messageSpec) {
         errors.push({
           message: "Missing required MessageSpec element (XSD Validation Rule 50003)",
           code: "50003",
         });
       } else {
-        const sendingEntityIN = messageSpec.querySelector("SendingEntityIN") ||
-                                Array.from(messageSpec.getElementsByTagName("*")).find(el => el.localName === "SendingEntityIN");
-        const transmittingCountry = messageSpec.querySelector("TransmittingCountry") ||
-                                     Array.from(messageSpec.getElementsByTagName("*")).find(el => el.localName === "TransmittingCountry");
-        const receivingCountry = messageSpec.querySelector("ReceivingCountry") ||
-                                  Array.from(messageSpec.getElementsByTagName("*")).find(el => el.localName === "ReceivingCountry");
-        const messageType = messageSpec.querySelector("MessageType") ||
-                            Array.from(messageSpec.getElementsByTagName("*")).find(el => el.localName === "MessageType");
-        const messageRefId = messageSpec.querySelector("MessageRefId") ||
-                             Array.from(messageSpec.getElementsByTagName("*")).find(el => el.localName === "MessageRefId");
-        const messageTypeIndic = messageSpec.querySelector("MessageTypeIndic") ||
-                                 Array.from(messageSpec.getElementsByTagName("*")).find(el => el.localName === "MessageTypeIndic");
+        const sendingEntityIN = Array.from(messageSpec.getElementsByTagName("*")).find(el => el.localName === "SendingEntityIN");
+        const transmittingCountry = Array.from(messageSpec.getElementsByTagName("*")).find(el => el.localName === "TransmittingCountry");
+        const receivingCountry = Array.from(messageSpec.getElementsByTagName("*")).find(el => el.localName === "ReceivingCountry");
+        const messageType = Array.from(messageSpec.getElementsByTagName("*")).find(el => el.localName === "MessageType");
+        const messageRefId = Array.from(messageSpec.getElementsByTagName("*")).find(el => el.localName === "MessageRefId");
+        const messageTypeIndic = Array.from(messageSpec.getElementsByTagName("*")).find(el => el.localName === "MessageTypeIndic");
 
         if (!sendingEntityIN || !sendingEntityIN.textContent?.trim()) {
           errors.push({
@@ -153,8 +146,7 @@ Deno.serve(async (req: Request) => {
         }
       }
 
-      const reportingPeriod = doc.querySelector("ReportingPeriod") ||
-                              Array.from(doc.getElementsByTagName("*")).find(el => el.localName === "ReportingPeriod");
+      const reportingPeriod = Array.from(doc.getElementsByTagName("*")).find(el => el.localName === "ReportingPeriod");
       if (!reportingPeriod || !reportingPeriod.textContent?.trim()) {
         errors.push({
           message: "Missing or empty ReportingPeriod (XSD Validation Rule 50015)",
