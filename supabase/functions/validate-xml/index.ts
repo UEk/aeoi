@@ -41,246 +41,26 @@ Deno.serve(async (req: Request) => {
 
     const errors: ValidationError[] = [];
 
+    const dangerousPatterns = ["--", "/*", "&#"];
+    for (const pattern of dangerousPatterns) {
+      if (xmlContent.includes(pattern)) {
+        errors.push({
+          message: `Failed Threat Scan: The receiving Competent Authority detected one or more potential security threats. Character combination "${pattern}" is not allowed.`,
+          code: "50005",
+        });
+        break;
+      }
+    }
+
     const parser = new DOMParser();
     const doc = parser.parseFromString(xmlContent, "text/xml");
 
     const parseError = doc.querySelector("parsererror");
     if (parseError) {
       errors.push({
-        message: `XML parsing error: ${parseError.textContent}`,
-        code: "50001",
+        message: `Failed Schema Validation: The referenced file failed validation against the CRS XML Schema. ${parseError.textContent}`,
+        code: "50007",
       });
-    }
-
-    if (!doc.querySelector("parsererror")) {
-      const rootElement = doc.documentElement;
-      const isCrsOecd = rootElement?.localName === "CRS_OECD";
-      const isMessageBody = rootElement?.localName === "MessageBody";
-
-      if (!isCrsOecd && !isMessageBody) {
-        errors.push({
-          message: "Missing required CRS_OECD or MessageBody root element",
-          code: "50002",
-        });
-      }
-
-      const allElements = doc.getElementsByTagNameNS("*", "*");
-      const messageSpec = Array.from(allElements).find(el => el.localName === "MessageSpec");
-      if (!messageSpec) {
-        errors.push({
-          message: "Missing required MessageSpec element",
-          code: "50003",
-        });
-      } else {
-        const specElements = messageSpec.getElementsByTagNameNS("*", "*");
-        const transmittingCountry = Array.from(specElements).find(el => el.localName === "TransmittingCountry");
-        const receivingCountry = Array.from(specElements).find(el => el.localName === "ReceivingCountry");
-        const messageType = Array.from(specElements).find(el => el.localName === "MessageType");
-        const messageRefId = Array.from(specElements).find(el => el.localName === "MessageRefId");
-        const messageTypeIndic = Array.from(specElements).find(el => el.localName === "MessageTypeIndic");
-
-        if (!transmittingCountry || !transmittingCountry.textContent?.trim()) {
-          errors.push({
-            message: "Missing or empty TransmittingCountry in MessageSpec",
-            code: "50006",
-          });
-        } else {
-          const country = transmittingCountry.textContent?.trim();
-          if (country && country.length !== 2) {
-            errors.push({
-              message: `TransmittingCountry must be a 2-letter ISO country code, got: ${country}`,
-              code: "50007",
-            });
-          }
-        }
-
-        if (!receivingCountry || !receivingCountry.textContent?.trim()) {
-          errors.push({
-            message: "Missing or empty ReceivingCountry in MessageSpec",
-            code: "50008",
-          });
-        } else {
-          const country = receivingCountry.textContent?.trim();
-          if (country && country.length !== 2) {
-            errors.push({
-              message: `ReceivingCountry must be a 2-letter ISO country code, got: ${country}`,
-              code: "50010",
-            });
-          }
-        }
-
-        if (!messageType || messageType.textContent?.trim() !== "CRS") {
-          errors.push({
-            message: "MessageType must be 'CRS'",
-            code: "50011",
-          });
-        }
-
-        if (!messageRefId || !messageRefId.textContent?.trim()) {
-          errors.push({
-            message: "Missing or empty MessageRefId in MessageSpec",
-            code: "50009",
-          });
-        }
-
-        if (!messageTypeIndic || !messageTypeIndic.textContent?.trim()) {
-          errors.push({
-            message: "Missing or empty MessageTypeIndic in MessageSpec",
-            code: "50013",
-          });
-        } else {
-          const validCrsIndicators = ["CRS701", "CRS702", "CRS703"];
-          const validOecdIndicators = ["OECD0", "OECD1", "OECD2", "OECD3", "OECD10", "OECD11", "OECD12", "OECD13"];
-          const allValidIndicators = [...validCrsIndicators, ...validOecdIndicators];
-          const indic = messageTypeIndic.textContent?.trim();
-          if (indic && !allValidIndicators.includes(indic)) {
-            errors.push({
-              message: `Invalid MessageTypeIndic value: ${indic}. Must be one of: ${allValidIndicators.join(", ")}`,
-              code: "50014",
-            });
-          }
-        }
-      }
-
-      const reportingPeriod = Array.from(allElements).find(el => el.localName === "ReportingPeriod");
-      if (!reportingPeriod || !reportingPeriod.textContent?.trim()) {
-        errors.push({
-          message: "Missing or empty ReportingPeriod",
-          code: "50015",
-        });
-      } else {
-        const period = reportingPeriod.textContent?.trim();
-        if (period && !/^\d{4}-\d{2}-\d{2}$/.test(period)) {
-          errors.push({
-            message: `Invalid ReportingPeriod format: ${period}. Expected format: YYYY-MM-DD`,
-            code: "50016",
-          });
-        }
-      }
-
-      const accountReports = Array.from(allElements).filter(el => el.localName === "AccountReport");
-      if (accountReports.length === 0) {
-        errors.push({
-          message: "No AccountReport elements found in XML",
-          code: "50017",
-        });
-      } else {
-        accountReports.forEach((report, index) => {
-          const reportElements = report.getElementsByTagNameNS("*", "*");
-          const docRefId = Array.from(reportElements).find(el => el.localName === "DocRefId");
-          if (!docRefId || !docRefId.textContent?.trim()) {
-            errors.push({
-              message: `AccountReport ${index + 1}: Missing or empty DocRefId`,
-              code: "50018",
-            });
-          }
-
-          const accountNumber = Array.from(reportElements).find(el => el.localName === "AccountNumber");
-          if (!accountNumber || !accountNumber.textContent?.trim()) {
-            errors.push({
-              message: `AccountReport ${index + 1}: Missing or empty AccountNumber`,
-              code: "50019",
-            });
-          }
-
-          const accountHolder = Array.from(reportElements).find(el => el.localName === "AccountHolder");
-          if (!accountHolder) {
-            errors.push({
-              message: `AccountReport ${index + 1}: Missing AccountHolder element`,
-              code: "50020",
-            });
-          } else {
-            const holderElements = accountHolder.getElementsByTagNameNS("*", "*");
-            const individual = Array.from(holderElements).find(el => el.localName === "Individual");
-            const organisation = Array.from(holderElements).find(el => el.localName === "Organisation");
-
-            if (!individual && !organisation) {
-              errors.push({
-                message: `AccountReport ${index + 1}: AccountHolder must contain either Individual or Organisation`,
-                code: "50021",
-              });
-            }
-
-            if (individual) {
-              const individualElements = individual.getElementsByTagNameNS("*", "*");
-              const resCountryCode = Array.from(individualElements).find(el => el.localName === "ResCountryCode");
-              if (!resCountryCode || !resCountryCode.textContent?.trim()) {
-                errors.push({
-                  message: `AccountReport ${index + 1}: Missing or empty ResCountryCode in Individual`,
-                  code: "50022",
-                });
-              }
-
-              const name = Array.from(individualElements).find(el => el.localName === "Name");
-              if (!name) {
-                errors.push({
-                  message: `AccountReport ${index + 1}: Missing Name element in Individual`,
-                  code: "50023",
-                });
-              }
-
-              const address = Array.from(individualElements).find(el => el.localName === "Address");
-              if (!address) {
-                errors.push({
-                  message: `AccountReport ${index + 1}: Missing Address element in Individual`,
-                  code: "50024",
-                });
-              }
-            }
-
-            if (organisation) {
-              const orgElements = organisation.getElementsByTagNameNS("*", "*");
-              const resCountryCode = Array.from(orgElements).find(el => el.localName === "ResCountryCode");
-              if (!resCountryCode || !resCountryCode.textContent?.trim()) {
-                errors.push({
-                  message: `AccountReport ${index + 1}: Missing or empty ResCountryCode in Organisation`,
-                  code: "50025",
-                });
-              }
-
-              const name = Array.from(orgElements).find(el => el.localName === "Name");
-              if (!name || !name.textContent?.trim()) {
-                errors.push({
-                  message: `AccountReport ${index + 1}: Missing or empty Name in Organisation`,
-                  code: "50026",
-                });
-              }
-
-              const address = Array.from(orgElements).find(el => el.localName === "Address");
-              if (!address) {
-                errors.push({
-                  message: `AccountReport ${index + 1}: Missing Address element in Organisation`,
-                  code: "50027",
-                });
-              }
-            }
-          }
-
-          const accountBalance = Array.from(reportElements).find(el => el.localName === "AccountBalance");
-          if (!accountBalance || !accountBalance.textContent?.trim()) {
-            errors.push({
-              message: `AccountReport ${index + 1}: Missing or empty AccountBalance`,
-              code: "50028",
-            });
-          } else {
-            const currCode = accountBalance.getAttribute("currCode");
-            if (!currCode || currCode.length !== 3) {
-              errors.push({
-                message: `AccountReport ${index + 1}: AccountBalance must have a 3-letter currCode attribute`,
-                code: "50029",
-              });
-            }
-
-            const amount = accountBalance.textContent?.trim();
-            if (amount && !/^\d+(\.\d{1,2})?$/.test(amount)) {
-              errors.push({
-                message: `AccountReport ${index + 1}: AccountBalance must be numeric with maximum 2 decimal places`,
-                code: "50030",
-              });
-            }
-          }
-        });
-      }
     }
 
     const response = {
