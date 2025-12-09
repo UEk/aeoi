@@ -68,24 +68,28 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const corrDocRefIdElements = doc.querySelectorAll("CorrDocRefId");
+    const allElements = doc.getElementsByTagName("*");
 
-    for (let i = 0; i < corrDocRefIdElements.length; i++) {
-      const element = corrDocRefIdElements[i];
-      const corrDocRefId = element.textContent?.trim();
+    for (let i = 0; i < allElements.length; i++) {
+      const element = allElements[i];
+      const localName = element.localName || element.tagName.split(':').pop();
 
-      if (corrDocRefId) {
-        const { data } = await supabase
-          .from("aeoi_record")
-          .select("doc_ref_id")
-          .eq("doc_ref_id", corrDocRefId)
-          .maybeSingle();
+      if (localName === "CorrDocRefId") {
+        const corrDocRefId = element.textContent?.trim();
 
-        if (!data) {
-          errors.push({
-            message: `CorrDocRefId "${corrDocRefId}" does not match any previously uploaded DocRefId.`,
-            code: "80002",
-          });
+        if (corrDocRefId) {
+          const { data } = await supabase
+            .from("aeoi_record")
+            .select("doc_ref_id")
+            .eq("doc_ref_id", corrDocRefId)
+            .maybeSingle();
+
+          if (!data) {
+            errors.push({
+              message: `CorrDocRefId "${corrDocRefId}" does not match any previously uploaded DocRefId.`,
+              code: "80002",
+            });
+          }
         }
       }
     }
