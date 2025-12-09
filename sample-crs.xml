@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CrsEnvelope xmlns="urn:oecd:ties:crs:v1">
+  <CrsBody>
+    <CrsMessageSpec>
+      <SendingCompany>Swedish Tax Authority</SendingCompany>
+      <MessageType>CRS</MessageType>
+      <MessageRefId>SE2023CRS00001</MessageRefId>
+      <ReportingPeriod>2023-01-01</ReportingPeriod>
+      <Timestamp>2023-12-31T23:59:59Z</Timestamp>
+    </CrsMessageSpec>
+    <Report>
+      <ReportingCountry>SE</ReportingCountry>
+      <ReportingYear>2023</ReportingYear>
+      <ReportingFI>
+        <OrganisationName>Example Bank AB</OrganisationName>
+        <Address>
+          <CountryCode>SE</CountryCode>
+        </Address>
+      </ReportingFI>
+      <AccountReport>
+        <DocRefId>SE2023CRS00001_001</DocRefId>
+        <Account>
+          <TIN>197001011234</TIN>
+          <Name>John Andersson</Name>
+          <Address>
+            <CountryCode>US</CountryCode>
+          </Address>
+          <DocSpec>
+            <DocTypeIndic>CRS</DocTypeIndic>
+            <DocRefId>SE2023CRS00001_001</DocRefId>
+          </DocSpec>
+          <AccountBalance>
+            <ClosingBalance currCode="EUR">250000.50</ClosingBalance>
+          </AccountBalance>
+          <Payment>
+            <Type>Interest</Type>
+            <Amount currCode="EUR">5000.00</Amount>
+            <PaymentDate>2023-12-31</PaymentDate>
+          </Payment>
+        </Account>
+      </AccountReport>
+      <AccountReport>
+        <DocRefId>SE2023CRS00001_002</DocRefId>
+        <Account>
+          <TIN>196512345678</TIN>
+          <Name>Maria Svensson</Name>
+          <Address>
+            <CountryCode>GB</CountryCode>
+          </Address>
+          <DocSpec>
+            <DocTypeIndic>CRS</DocTypeIndic>
+            <DocRefId>SE2023CRS00001_002</DocRefId>
+          </DocSpec>
+          <AccountBalance>
+            <ClosingBalance currCode="SEK">1500000.00</ClosingBalance>
+          </AccountBalance>
+          <Payment>
+            <Type>Dividends</Type>
+            <Amount currCode="SEK">75000.00</Amount>
+            <PaymentDate>2023-06-15</PaymentDate>
+          </Payment>
+        </Account>
+      </AccountReport>
+    </Report>
+  </CrsBody>
+</CrsEnvelope>
