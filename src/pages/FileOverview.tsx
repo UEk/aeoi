@@ -81,6 +81,58 @@ export function FileOverview() {
         .update({ status: 'VALIDATING', updated_at: new Date().toISOString() })
         .eq('file_id', fileId);
 
+      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/validate-xml`;
+      const { data: { session } } = await supabase.auth.getSession();
+
+      const validationResponse = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session?.access_token || import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ xmlContent }),
+      });
+
+      const validationResult = await validationResponse.json();
+
+      if (!validationResult.valid && validationResult.errors) {
+        const xsdErrors = validationResult.errors.map((error: any) => ({
+          file_id: fileId,
+          code: error.code,
+          message: error.message,
+          level: 'ERROR',
+        }));
+
+        if (xsdErrors.length > 0) {
+          await supabase.from('validation_error').insert(xsdErrors);
+        }
+
+        await supabase
+          .from('file_receipt')
+          .update({ status: 'FAILED', updated_at: new Date().toISOString() })
+          .eq('file_id', fileId);
+
+        const { data: caseData } = await supabase
+          .from('aeoi_case')
+          .select('case_id')
+          .eq('file_id', fileId)
+          .maybeSingle();
+
+        if (caseData) {
+          const errorSummary = xsdErrors.map((e: any) => `${e.code}: ${e.message}`).join('\n');
+          await supabase.from('aeoi_task').insert({
+            case_id: caseData.case_id,
+            type: 'VALIDATION_ERROR',
+            status: 'OPEN',
+            comments: `XML Schema validation failed with ${xsdErrors.length} error(s):\n${errorSummary}`,
+          });
+        }
+
+        console.log('XSD validation failed for file:', fileId);
+        loadFiles();
+        return;
+      }
+
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
       await supabase
