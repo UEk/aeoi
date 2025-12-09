@@ -233,6 +233,9 @@ export function TINSearch() {
                   Original Amount
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Amount EUR
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Amount SEK
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -244,7 +247,7 @@ export function TINSearch() {
               {loading ? (
                 <tr>
                   <td
-                    colSpan={8}
+                    colSpan={9}
                     className="px-6 py-4 text-center text-sm text-gray-500"
                   >
                     Searching...
@@ -253,7 +256,7 @@ export function TINSearch() {
               ) : results.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={8}
+                    colSpan={9}
                     className="px-6 py-4 text-center text-sm text-gray-500"
                   >
                     No results found. Try a different search term or enable prefix
@@ -284,6 +287,14 @@ export function TINSearch() {
                             minimumFractionDigits: 2,
                             maximumFractionDigits: 2,
                           })} ${result.currency_original || ''}`
+                        : 'N/A'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900">
+                      {result.amount_eur
+                        ? result.amount_eur.toLocaleString('sv-SE', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })
                         : 'N/A'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-medium text-gray-900">
