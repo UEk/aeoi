@@ -64,19 +64,21 @@ Deno.serve(async (req: Request) => {
         });
       }
 
-      const messageSpec = Array.from(doc.getElementsByTagName("*")).find(el => el.localName === "MessageSpec");
+      const allElements = doc.getElementsByTagNameNS("*", "*");
+      const messageSpec = Array.from(allElements).find(el => el.localName === "MessageSpec");
       if (!messageSpec) {
         errors.push({
           message: "Missing required MessageSpec element (XSD Validation Rule 50003)",
           code: "50003",
         });
       } else {
-        const sendingEntityIN = Array.from(messageSpec.getElementsByTagName("*")).find(el => el.localName === "SendingEntityIN");
-        const transmittingCountry = Array.from(messageSpec.getElementsByTagName("*")).find(el => el.localName === "TransmittingCountry");
-        const receivingCountry = Array.from(messageSpec.getElementsByTagName("*")).find(el => el.localName === "ReceivingCountry");
-        const messageType = Array.from(messageSpec.getElementsByTagName("*")).find(el => el.localName === "MessageType");
-        const messageRefId = Array.from(messageSpec.getElementsByTagName("*")).find(el => el.localName === "MessageRefId");
-        const messageTypeIndic = Array.from(messageSpec.getElementsByTagName("*")).find(el => el.localName === "MessageTypeIndic");
+        const specElements = messageSpec.getElementsByTagNameNS("*", "*");
+        const sendingEntityIN = Array.from(specElements).find(el => el.localName === "SendingEntityIN");
+        const transmittingCountry = Array.from(specElements).find(el => el.localName === "TransmittingCountry");
+        const receivingCountry = Array.from(specElements).find(el => el.localName === "ReceivingCountry");
+        const messageType = Array.from(specElements).find(el => el.localName === "MessageType");
+        const messageRefId = Array.from(specElements).find(el => el.localName === "MessageRefId");
+        const messageTypeIndic = Array.from(specElements).find(el => el.localName === "MessageTypeIndic");
 
         if (!sendingEntityIN || !sendingEntityIN.textContent?.trim()) {
           errors.push({
@@ -146,7 +148,7 @@ Deno.serve(async (req: Request) => {
         }
       }
 
-      const reportingPeriod = Array.from(doc.getElementsByTagName("*")).find(el => el.localName === "ReportingPeriod");
+      const reportingPeriod = Array.from(allElements).find(el => el.localName === "ReportingPeriod");
       if (!reportingPeriod || !reportingPeriod.textContent?.trim()) {
         errors.push({
           message: "Missing or empty ReportingPeriod (XSD Validation Rule 50015)",
@@ -162,7 +164,7 @@ Deno.serve(async (req: Request) => {
         }
       }
 
-      const accountReports = Array.from(doc.getElementsByTagName("*")).filter(el => el.localName === "AccountReport");
+      const accountReports = Array.from(allElements).filter(el => el.localName === "AccountReport");
       if (accountReports.length === 0) {
         errors.push({
           message: "No AccountReport elements found in XML (XSD Validation Rule 50017)",
@@ -170,7 +172,8 @@ Deno.serve(async (req: Request) => {
         });
       } else {
         accountReports.forEach((report, index) => {
-          const docRefId = Array.from(report.getElementsByTagName("*")).find(el => el.localName === "DocRefId");
+          const reportElements = report.getElementsByTagNameNS("*", "*");
+          const docRefId = Array.from(reportElements).find(el => el.localName === "DocRefId");
           if (!docRefId || !docRefId.textContent?.trim()) {
             errors.push({
               message: `AccountReport ${index + 1}: Missing or empty DocRefId (XSD Validation Rule 50018)`,
@@ -178,7 +181,7 @@ Deno.serve(async (req: Request) => {
             });
           }
 
-          const accountNumber = Array.from(report.getElementsByTagName("*")).find(el => el.localName === "AccountNumber");
+          const accountNumber = Array.from(reportElements).find(el => el.localName === "AccountNumber");
           if (!accountNumber || !accountNumber.textContent?.trim()) {
             errors.push({
               message: `AccountReport ${index + 1}: Missing or empty AccountNumber (XSD Validation Rule 50019)`,
@@ -186,15 +189,16 @@ Deno.serve(async (req: Request) => {
             });
           }
 
-          const accountHolder = Array.from(report.getElementsByTagName("*")).find(el => el.localName === "AccountHolder");
+          const accountHolder = Array.from(reportElements).find(el => el.localName === "AccountHolder");
           if (!accountHolder) {
             errors.push({
               message: `AccountReport ${index + 1}: Missing AccountHolder element (XSD Validation Rule 50020)`,
               code: "50020",
             });
           } else {
-            const individual = Array.from(accountHolder.getElementsByTagName("*")).find(el => el.localName === "Individual");
-            const organisation = Array.from(accountHolder.getElementsByTagName("*")).find(el => el.localName === "Organisation");
+            const holderElements = accountHolder.getElementsByTagNameNS("*", "*");
+            const individual = Array.from(holderElements).find(el => el.localName === "Individual");
+            const organisation = Array.from(holderElements).find(el => el.localName === "Organisation");
 
             if (!individual && !organisation) {
               errors.push({
@@ -204,7 +208,8 @@ Deno.serve(async (req: Request) => {
             }
 
             if (individual) {
-              const resCountryCode = Array.from(individual.getElementsByTagName("*")).find(el => el.localName === "ResCountryCode");
+              const individualElements = individual.getElementsByTagNameNS("*", "*");
+              const resCountryCode = Array.from(individualElements).find(el => el.localName === "ResCountryCode");
               if (!resCountryCode || !resCountryCode.textContent?.trim()) {
                 errors.push({
                   message: `AccountReport ${index + 1}: Missing or empty ResCountryCode in Individual (XSD Validation Rule 50022)`,
@@ -212,7 +217,7 @@ Deno.serve(async (req: Request) => {
                 });
               }
 
-              const name = Array.from(individual.getElementsByTagName("*")).find(el => el.localName === "Name");
+              const name = Array.from(individualElements).find(el => el.localName === "Name");
               if (!name) {
                 errors.push({
                   message: `AccountReport ${index + 1}: Missing Name element in Individual (XSD Validation Rule 50023)`,
@@ -220,7 +225,7 @@ Deno.serve(async (req: Request) => {
                 });
               }
 
-              const address = Array.from(individual.getElementsByTagName("*")).find(el => el.localName === "Address");
+              const address = Array.from(individualElements).find(el => el.localName === "Address");
               if (!address) {
                 errors.push({
                   message: `AccountReport ${index + 1}: Missing Address element in Individual (XSD Validation Rule 50024)`,
@@ -230,7 +235,8 @@ Deno.serve(async (req: Request) => {
             }
 
             if (organisation) {
-              const resCountryCode = Array.from(organisation.getElementsByTagName("*")).find(el => el.localName === "ResCountryCode");
+              const orgElements = organisation.getElementsByTagNameNS("*", "*");
+              const resCountryCode = Array.from(orgElements).find(el => el.localName === "ResCountryCode");
               if (!resCountryCode || !resCountryCode.textContent?.trim()) {
                 errors.push({
                   message: `AccountReport ${index + 1}: Missing or empty ResCountryCode in Organisation (XSD Validation Rule 50025)`,
@@ -238,7 +244,7 @@ Deno.serve(async (req: Request) => {
                 });
               }
 
-              const name = Array.from(organisation.getElementsByTagName("*")).find(el => el.localName === "Name");
+              const name = Array.from(orgElements).find(el => el.localName === "Name");
               if (!name || !name.textContent?.trim()) {
                 errors.push({
                   message: `AccountReport ${index + 1}: Missing or empty Name in Organisation (XSD Validation Rule 50026)`,
@@ -246,7 +252,7 @@ Deno.serve(async (req: Request) => {
                 });
               }
 
-              const address = Array.from(organisation.getElementsByTagName("*")).find(el => el.localName === "Address");
+              const address = Array.from(orgElements).find(el => el.localName === "Address");
               if (!address) {
                 errors.push({
                   message: `AccountReport ${index + 1}: Missing Address element in Organisation (XSD Validation Rule 50027)`,
@@ -256,7 +262,7 @@ Deno.serve(async (req: Request) => {
             }
           }
 
-          const accountBalance = Array.from(report.getElementsByTagName("*")).find(el => el.localName === "AccountBalance");
+          const accountBalance = Array.from(reportElements).find(el => el.localName === "AccountBalance");
           if (!accountBalance || !accountBalance.textContent?.trim()) {
             errors.push({
               message: `AccountReport ${index + 1}: Missing or empty AccountBalance (XSD Validation Rule 50028)`,
