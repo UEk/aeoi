@@ -357,4 +357,5 @@ For issues or questions, please refer to the specification document.
 
 ---
 
+
 **Built with**: React, TypeScript, Vite, Tailwind CSS, Supabase, PostgreSQL
