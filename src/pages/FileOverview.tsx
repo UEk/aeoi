@@ -76,28 +76,20 @@ export function FileOverview() {
     try {
       console.log('Processing file:', fileId);
 
-      await supabase
-        .from('file_receipt')
-        .update({ status: 'VALIDATING', updated_at: new Date().toISOString() })
-        .eq('file_id', fileId);
+      const { data: errorCheck } = await supabase
+        .from('validation_error')
+        .select('*')
+        .eq('file_id', fileId)
+        .eq('level', 'ERROR');
 
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const hasBlockingErrors = errorCheck && errorCheck.length > 0;
 
-      const hasErrors = xmlContent.includes('--') || xmlContent.includes('/*');
-
-      if (hasErrors) {
-        console.log('Validation failed: threat detected');
+      if (hasBlockingErrors) {
+        console.log('Validation failed: blocking errors detected');
         await supabase
           .from('file_receipt')
           .update({ status: 'FAILED', updated_at: new Date().toISOString() })
           .eq('file_id', fileId);
-
-        await supabase.from('validation_error').insert({
-          file_id: fileId,
-          code: '50005',
-          message: 'Threat scan failed: forbidden sequence detected',
-          level: 'ERROR',
-        });
 
         const { data: caseData } = await supabase
           .from('aeoi_case')
@@ -110,13 +102,20 @@ export function FileOverview() {
             case_id: caseData.case_id,
             type: 'VALIDATION_ERROR',
             status: 'OPEN',
-            description: 'Threat scan failed: forbidden sequence detected',
+            comments: `File has ${errorCheck.length} blocking validation error(s). File cannot be processed.`,
           });
         }
 
         loadFiles();
         return;
       }
+
+      await supabase
+        .from('file_receipt')
+        .update({ status: 'VALIDATING', updated_at: new Date().toISOString() })
+        .eq('file_id', fileId);
+
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
       await supabase
         .from('file_receipt')
@@ -217,18 +216,10 @@ export function FileOverview() {
         }
       }
 
-      const { data: errorData } = await supabase
-        .from('validation_error')
-        .select('*')
-        .eq('file_id', fileId)
-        .eq('level', 'ERROR');
-
-      const hasBlockingErrors = errorData && errorData.length > 0;
-
       await supabase
         .from('file_receipt')
         .update({
-          status: hasBlockingErrors ? 'FAILED' : 'COMPLETED',
+          status: 'COMPLETED',
           updated_at: new Date().toISOString()
         })
         .eq('file_id', fileId);
@@ -237,25 +228,8 @@ export function FileOverview() {
         correlation_id: correlationId,
         actor_id: 'anonymous',
         action: 'TRANSFORM',
-        details: { fileId, recordsCreated: accountReports.length, hasErrors: hasBlockingErrors },
+        details: { fileId, recordsCreated: accountReports.length },
       });
-
-      if (hasBlockingErrors) {
-        const { data: caseData } = await supabase
-          .from('aeoi_case')
-          .select('case_id')
-          .eq('file_id', fileId)
-          .maybeSingle();
-
-        if (caseData) {
-          await supabase.from('aeoi_task').insert({
-            case_id: caseData.case_id,
-            type: 'VALIDATION_ERROR',
-            status: 'OPEN',
-            comments: `File has ${errorData.length} validation error(s). File marked as FAILED.`,
-          });
-        }
-      }
 
       console.log('Processing complete for file:', fileId);
       loadFiles();
@@ -346,11 +320,21 @@ export function FileOverview() {
       if (caseError) throw caseError;
 
       const validationErrors = [];
+
+      if (content.includes('--') || content.includes('/*') || content.includes('&#')) {
+        validationErrors.push({
+          file_id: fileData.file_id,
+          code: '50005',
+          message: 'Threat scan failed: forbidden sequence detected (Validation Rule 50005 - Blocking)',
+          level: 'ERROR',
+        });
+      }
+
       if (!messageRefId) {
         validationErrors.push({
           file_id: fileData.file_id,
           code: '50009',
-          message: 'MessageRefId could not be extracted from XML (Validation Rule 50009)',
+          message: 'MessageRefId could not be extracted from XML (Validation Rule 50009 - Blocking)',
           level: 'ERROR',
         });
       } else {
@@ -370,14 +354,16 @@ export function FileOverview() {
           });
         }
       }
+
       if (!jurisdiction) {
         validationErrors.push({
           file_id: fileData.file_id,
-          code: 'MISSING_JURISDICTION',
-          message: 'SendingCompanyIN could not be extracted from XML',
+          code: '50012',
+          message: 'ReceivingCountry could not be extracted from XML (Validation Rule 50012)',
           level: 'WARNING',
         });
       }
+
       if (!action) {
         validationErrors.push({
           file_id: fileData.file_id,
