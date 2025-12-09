@@ -144,8 +144,8 @@ export function FileOverview() {
           if (duplicateRecordCheck) {
             await supabase.from('validation_error').insert({
               file_id: fileId,
-              code: '8000',
-              message: `Duplicate DocRefId detected: ${docRefId} (Validation Rule 8000 - Blocking)`,
+              code: '80000',
+              message: `Duplicate DocRefId detected: ${docRefId} (Validation Rule 80000 - Blocking)`,
               level: 'ERROR',
             });
           }
