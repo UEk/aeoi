@@ -1,4 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { DOMParser } from "npm:linkedom";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
