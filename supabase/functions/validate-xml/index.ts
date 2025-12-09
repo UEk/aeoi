@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { DOMParser } from "npm:linkedom@0.18.2";
+import { createClient } from "npm:@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -39,6 +40,10 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
     const errors: ValidationError[] = [];
 
     const dangerousPatterns = ["--", "/*", "&#"];
@@ -61,6 +66,31 @@ Deno.serve(async (req: Request) => {
         message: `Failed Schema Validation: The referenced file failed validation against the CRS XML Schema. ${parseError.textContent}`,
         code: "50007",
       });
+    }
+
+    const corrDocRefIdElements = doc.querySelectorAll("CorrDocRefId");
+    const corrDocRefIds: string[] = [];
+
+    corrDocRefIdElements.forEach((element) => {
+      const value = element.textContent?.trim();
+      if (value) {
+        corrDocRefIds.push(value);
+      }
+    });
+
+    for (const corrDocRefId of corrDocRefIds) {
+      const { data, error } = await supabase
+        .from("aeoi_record")
+        .select("doc_ref_id")
+        .eq("doc_ref_id", corrDocRefId)
+        .maybeSingle();
+
+      if (error || !data) {
+        errors.push({
+          message: `CorrDocRefId "${corrDocRefId}" does not match any previously uploaded DocRefId.`,
+          code: "80002",
+        });
+      }
     }
 
     const response = {
