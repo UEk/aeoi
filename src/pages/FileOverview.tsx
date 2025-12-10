@@ -194,11 +194,16 @@ export function FileOverview() {
             .maybeSingle();
 
           if (duplicateRecordCheck) {
+            const lineNumber = findLineNumber(xmlContent, docRefId);
+            const snippet = lineNumber ? extractSnippet(xmlContent, lineNumber) : null;
+
             await supabase.from('validation_error').insert({
               file_id: fileId,
               code: '80000',
               message: `Duplicate DocRefId detected: ${docRefId} (Validation Rule 80000 - Blocking)`,
               level: 'ERROR',
+              line_number: lineNumber,
+              xml_snippet: snippet,
             });
           }
 
@@ -360,6 +365,7 @@ export function FileOverview() {
           jurisdiction: jurisdiction,
           reporting_period: reportingPeriod,
           doc_type_indicator: action,
+          xml_content: content,
         })
         .select()
         .single();
@@ -381,11 +387,17 @@ export function FileOverview() {
       const validationErrors = [];
 
       if (content.includes('--') || content.includes('/*') || content.includes('&#')) {
+        const forbiddenSeq = content.includes('--') ? '--' : content.includes('/*') ? '/*' : '&#';
+        const lineNumber = findLineNumber(content, forbiddenSeq);
+        const snippet = lineNumber ? extractSnippet(content, lineNumber) : null;
+
         validationErrors.push({
           file_id: fileData.file_id,
           code: '50005',
           message: 'Threat scan failed: forbidden sequence detected (Validation Rule 50005 - Blocking)',
           level: 'ERROR',
+          line_number: lineNumber,
+          xml_snippet: snippet,
         });
       }
 
@@ -405,11 +417,16 @@ export function FileOverview() {
           .maybeSingle();
 
         if (duplicateCheck) {
+          const lineNumber = findLineNumber(content, messageRefId);
+          const snippet = lineNumber ? extractSnippet(content, lineNumber) : null;
+
           validationErrors.push({
             file_id: fileData.file_id,
             code: '50009',
             message: `Duplicate MessageRefId detected: ${messageRefId} (Validation Rule 50009 - Blocking)`,
             level: 'ERROR',
+            line_number: lineNumber,
+            xml_snippet: snippet,
           });
         }
       }
@@ -478,6 +495,29 @@ export function FileOverview() {
   const extractMessageTypeIndic = (xmlContent: string): string | null => {
     const match = xmlContent.match(/<crs:MessageTypeIndic[^>]*>([^<]+)<\/crs:MessageTypeIndic>/i);
     return match ? match[1].trim() : null;
+  };
+
+  const findLineNumber = (xmlContent: string, searchText: string): number | null => {
+    const lines = xmlContent.split('\n');
+    for (let i = 0; i < lines.length; i++) {
+      if (lines[i].includes(searchText)) {
+        return i + 1;
+      }
+    }
+    return null;
+  };
+
+  const extractSnippet = (xmlContent: string, lineNumber: number, contextLines: number = 5): string => {
+    const lines = xmlContent.split('\n');
+    const startLine = Math.max(0, lineNumber - contextLines - 1);
+    const endLine = Math.min(lines.length, lineNumber + contextLines);
+
+    const snippetLines = [];
+    for (let i = startLine; i < endLine; i++) {
+      snippetLines.push(`${i + 1}: ${lines[i]}`);
+    }
+
+    return snippetLines.join('\n');
   };
 
   const getFileStats = () => {

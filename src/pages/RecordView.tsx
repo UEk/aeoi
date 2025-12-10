@@ -3,6 +3,7 @@ import { RefreshCw } from 'lucide-react';
 import { supabase, AEOIRecord, ValidationError } from '../lib/supabase';
 import { StatusBadge } from '../components/StatusBadge';
 import { formatCurrency, formatDate } from '../lib/utils';
+import { ErrorSnippetModal } from '../components/ErrorSnippetModal';
 
 export function RecordView() {
   const [records, setRecords] = useState<AEOIRecord[]>([]);
@@ -10,6 +11,9 @@ export function RecordView() {
   const [selectedRecord, setSelectedRecord] = useState<AEOIRecord | null>(null);
   const [errors, setErrors] = useState<ValidationError[]>([]);
   const [filter, setFilter] = useState<string>('ALL');
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedError, setSelectedError] = useState<ValidationError | null>(null);
+  const [fileName, setFileName] = useState<string>('');
 
   const loadRecords = async () => {
     setLoading(true);
@@ -59,6 +63,19 @@ export function RecordView() {
       loadRecordErrors(selectedRecord.record_id);
     }
   }, [selectedRecord]);
+
+  const handleErrorClick = async (error: ValidationError) => {
+    setSelectedError(error);
+
+    const { data: fileData } = await supabase
+      .from('file_receipt')
+      .select('original_message_ref_id')
+      .eq('file_id', error.file_id)
+      .maybeSingle();
+
+    setFileName(fileData?.original_message_ref_id || 'Unknown File');
+    setModalOpen(true);
+  };
 
   return (
     <div className="space-y-6">
@@ -264,7 +281,8 @@ export function RecordView() {
                       {errors.map((err) => (
                         <div
                           key={err.id}
-                          className="p-3 bg-red-50 border border-red-200 rounded-md"
+                          className="p-3 bg-red-50 border border-red-200 rounded-md cursor-pointer hover:bg-red-100 transition-colors"
+                          onClick={() => handleErrorClick(err)}
                         >
                           <div className="flex items-start justify-between">
                             <span className="text-xs font-medium text-red-700">
@@ -296,6 +314,15 @@ export function RecordView() {
           )}
         </div>
       </div>
+
+      <ErrorSnippetModal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        errorCode={selectedError?.code || ''}
+        fileName={fileName}
+        snippet={selectedError?.xml_snippet || null}
+        lineNumber={selectedError?.line_number || null}
+      />
     </div>
   );
 }

@@ -22,6 +22,7 @@ export type FileReceipt = {
   status: string;
   correlation_id: string;
   file_size_bytes: number | null;
+  xml_content: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -77,6 +78,9 @@ export type ValidationError = {
   code: string;
   message: string;
   level: string;
+  line_number: number | null;
+  column_number: number | null;
+  xml_snippet: string | null;
   created_at: string;
 };
 

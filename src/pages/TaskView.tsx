@@ -3,6 +3,7 @@ import { RefreshCw, MessageSquare, Download } from 'lucide-react';
 import { supabase, AEOITask, ValidationError } from '../lib/supabase';
 import { StatusBadge } from '../components/StatusBadge';
 import { formatDate } from '../lib/utils';
+import { ErrorSnippetModal } from '../components/ErrorSnippetModal';
 
 export function TaskView() {
   const [tasks, setTasks] = useState<AEOITask[]>([]);
@@ -10,6 +11,9 @@ export function TaskView() {
   const [selectedTask, setSelectedTask] = useState<AEOITask | null>(null);
   const [errors, setErrors] = useState<ValidationError[]>([]);
   const [comment, setComment] = useState('');
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedError, setSelectedError] = useState<ValidationError | null>(null);
+  const [fileName, setFileName] = useState<string>('');
 
   const loadTasks = async () => {
     setLoading(true);
@@ -114,6 +118,19 @@ export function TaskView() {
     } catch (error: any) {
       alert(`Failed to add comment: ${error.message}`);
     }
+  };
+
+  const handleErrorClick = async (error: ValidationError) => {
+    setSelectedError(error);
+
+    const { data: fileData } = await supabase
+      .from('file_receipt')
+      .select('original_message_ref_id')
+      .eq('file_id', error.file_id)
+      .maybeSingle();
+
+    setFileName(fileData?.original_message_ref_id || 'Unknown File');
+    setModalOpen(true);
   };
 
   const exportErrorsCSV = () => {
@@ -245,7 +262,11 @@ export function TaskView() {
                     ) : (
                       <div className="divide-y divide-gray-200">
                         {errors.map((err) => (
-                          <div key={err.id} className="px-4 py-3">
+                          <div
+                            key={err.id}
+                            className="px-4 py-3 cursor-pointer hover:bg-gray-50 transition-colors"
+                            onClick={() => handleErrorClick(err)}
+                          >
                             <div className="flex items-start justify-between">
                               <span className="text-xs font-medium text-red-700">
                                 {err.code}
@@ -304,6 +325,15 @@ export function TaskView() {
           )}
         </div>
       </div>
+
+      <ErrorSnippetModal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        errorCode={selectedError?.code || ''}
+        fileName={fileName}
+        snippet={selectedError?.xml_snippet || null}
+        lineNumber={selectedError?.line_number || null}
+      />
     </div>
   );
 }
