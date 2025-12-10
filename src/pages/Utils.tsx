@@ -1,8 +1,138 @@
 import { useState, useEffect } from 'react';
-import { Trash2, Palette, Moon, Sun, Waves, Trees, Sunset as SunsetIcon, Snowflake, Coffee } from 'lucide-react';
+import { Trash2, Palette, Moon, Sun, Waves, Trees, Sunset as SunsetIcon, Snowflake, Coffee, Zap, Radio, Flower2, Square, Sparkles } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
-type Theme = 'light' | 'dark' | 'ocean' | 'forest' | 'sunset' | 'midnight' | 'nordic' | 'warm';
+type Theme = 'light' | 'dark' | 'ocean' | 'forest' | 'sunset' | 'midnight' | 'nordic' | 'warm' | 'jonas' | 'cyberpunk' | 'retro' | 'nature' | 'monochrome';
+
+interface ThemeVocabulary {
+  themeSection: string;
+  themeDescription: string;
+  databaseSection: string;
+  dangerZone: string;
+  purgeButton: string;
+  cancelButton: string;
+  confirmButton: string;
+}
+
+const vocabularies: Record<Theme, ThemeVocabulary> = {
+  light: {
+    themeSection: 'Visual Theme',
+    themeDescription: 'Choose a theme that suits your style. Your selection will be saved automatically.',
+    databaseSection: 'Database Management',
+    dangerZone: 'Danger Zone',
+    purgeButton: 'Purge Database',
+    cancelButton: 'Cancel',
+    confirmButton: 'Yes, Purge Everything'
+  },
+  dark: {
+    themeSection: 'Appearance Settings',
+    themeDescription: 'Select your preferred visual aesthetic. Changes persist across sessions.',
+    databaseSection: 'Data Control',
+    dangerZone: 'Critical Operations',
+    purgeButton: 'Obliterate Database',
+    cancelButton: 'Abort',
+    confirmButton: 'Confirm Deletion'
+  },
+  ocean: {
+    themeSection: 'WAVE STYLE',
+    themeDescription: 'Dive into your preferred aesthetic. Anchored automatically to your profile.',
+    databaseSection: 'FLEET MANAGEMENT',
+    dangerZone: 'Deep Waters',
+    purgeButton: 'Sink Database',
+    cancelButton: 'Resurface',
+    confirmButton: 'Scuttle All Data'
+  },
+  forest: {
+    themeSection: 'Theme Configuration',
+    themeDescription: 'Select theme. Preference stored locally.',
+    databaseSection: 'Database Operations',
+    dangerZone: 'High Risk Area',
+    purgeButton: 'Clear Database',
+    cancelButton: 'Cancel',
+    confirmButton: 'Execute Purge'
+  },
+  sunset: {
+    themeSection: 'Color Vibes',
+    themeDescription: 'Pick your perfect palette and let it glow across your experience.',
+    databaseSection: 'Data Horizon',
+    dangerZone: 'Burnout Zone',
+    purgeButton: 'Incinerate Database',
+    cancelButton: 'Cool Down',
+    confirmButton: 'Blaze It All'
+  },
+  midnight: {
+    themeSection: 'Interface Mode',
+    themeDescription: 'Choose your dimension. Your reality persists eternally.',
+    databaseSection: 'Data Void',
+    dangerZone: 'Event Horizon',
+    purgeButton: 'Erase Existence',
+    cancelButton: 'Return',
+    confirmButton: 'Delete Reality'
+  },
+  nordic: {
+    themeSection: 'Theme',
+    themeDescription: 'Select theme. Saved automatically.',
+    databaseSection: 'Database',
+    dangerZone: 'Warning',
+    purgeButton: 'Purge',
+    cancelButton: 'Cancel',
+    confirmButton: 'Confirm'
+  },
+  warm: {
+    themeSection: 'Cozy Settings',
+    themeDescription: 'Find your comfort zone. We\'ll remember your favorite spot.',
+    databaseSection: 'Kitchen Cleanup',
+    dangerZone: 'Hot Stove',
+    purgeButton: 'Empty Everything',
+    cancelButton: 'Keep It',
+    confirmButton: 'Clear the Table'
+  },
+  jonas: {
+    themeSection: 'Experience Mode',
+    themeDescription: 'Curate your digital environment. Preferences sync seamlessly.',
+    databaseSection: 'System Control',
+    dangerZone: 'Protected Zone',
+    purgeButton: 'Reset System',
+    cancelButton: 'Dismiss',
+    confirmButton: 'Authorize Reset'
+  },
+  cyberpunk: {
+    themeSection: '>> VISUAL_PROTOCOL',
+    themeDescription: 'Jack into your preferred interface. Neural cache updated real-time.',
+    databaseSection: '>> DATA_MAINFRAME',
+    dangerZone: 'ICE BARRIER',
+    purgeButton: 'Nuke Database',
+    cancelButton: 'Jack Out',
+    confirmButton: 'Execute Wipe'
+  },
+  retro: {
+    themeSection: '★ Style Select ★',
+    themeDescription: 'Choose your rad look! Totally saves your pick automatically.',
+    databaseSection: '★ Data Arcade ★',
+    dangerZone: 'Game Over Zone',
+    purgeButton: 'Delete High Scores',
+    cancelButton: 'Back',
+    confirmButton: 'Reset Console'
+  },
+  nature: {
+    themeSection: 'Visual Ecosystem',
+    themeDescription: 'Cultivate your environment. Your preference takes root naturally.',
+    databaseSection: 'Garden Management',
+    dangerZone: 'Wildfire Zone',
+    purgeButton: 'Clear the Garden',
+    cancelButton: 'Preserve',
+    confirmButton: 'Uproot Everything'
+  },
+  monochrome: {
+    themeSection: 'THEME',
+    themeDescription: 'SELECT. SAVE. DONE.',
+    databaseSection: 'DATABASE',
+    dangerZone: 'CRITICAL',
+    purgeButton: 'DELETE',
+    cancelButton: 'NO',
+    confirmButton: 'YES DELETE ALL'
+  }
+};
 
 interface ThemeOption {
   id: Theme;
@@ -81,6 +211,46 @@ const themes: ThemeOption[] = [
     icon: Coffee,
     preview: 'from-amber-100 to-orange-100',
     colors: { bg: 'bg-amber-50', accent: 'bg-amber-700', text: 'text-amber-900' }
+  },
+  {
+    id: 'jonas',
+    name: 'Jonas',
+    description: 'Sophisticated & modern',
+    icon: Sparkles,
+    preview: 'from-indigo-500 via-purple-500 to-pink-500',
+    colors: { bg: 'bg-slate-50', accent: 'bg-indigo-600', text: 'text-slate-900' }
+  },
+  {
+    id: 'cyberpunk',
+    name: 'Cyberpunk',
+    description: 'Neon-soaked future',
+    icon: Zap,
+    preview: 'from-fuchsia-600 via-cyan-500 to-yellow-400',
+    colors: { bg: 'bg-black', accent: 'bg-fuchsia-500', text: 'text-cyan-400' }
+  },
+  {
+    id: 'retro',
+    name: 'Retro',
+    description: 'Totally 80s vibes',
+    icon: Radio,
+    preview: 'from-pink-400 via-purple-400 to-blue-400',
+    colors: { bg: 'bg-purple-100', accent: 'bg-pink-500', text: 'text-purple-900' }
+  },
+  {
+    id: 'nature',
+    name: 'Nature',
+    description: 'Organic & earthy',
+    icon: Flower2,
+    preview: 'from-lime-600 via-green-500 to-emerald-600',
+    colors: { bg: 'bg-stone-100', accent: 'bg-lime-600', text: 'text-stone-900' }
+  },
+  {
+    id: 'monochrome',
+    name: 'Monochrome',
+    description: 'Brutalist minimalism',
+    icon: Square,
+    preview: 'from-black via-gray-700 to-gray-500',
+    colors: { bg: 'bg-white', accent: 'bg-black', text: 'text-black' }
   }
 ];
 
@@ -137,15 +307,17 @@ export function Utils() {
     }
   };
 
+  const vocab = vocabularies[currentTheme];
+
   return (
     <div className="space-y-8">
       <div className="bg-white shadow rounded-lg p-6">
         <div className="flex items-center mb-6">
           <Palette className="h-6 w-6 text-blue-600 mr-3" />
-          <h2 className="text-2xl font-semibold text-gray-900">Visual Theme</h2>
+          <h2 className="text-2xl font-semibold text-gray-900">{vocab.themeSection}</h2>
         </div>
         <p className="text-gray-600 mb-6">
-          Choose a theme that suits your style. Your selection will be saved automatically.
+          {vocab.themeDescription}
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {themes.map((theme) => {
@@ -178,10 +350,10 @@ export function Utils() {
       <div className="bg-white shadow rounded-lg p-6">
         <div className="flex items-center mb-6">
           <Trash2 className="h-6 w-6 text-red-600 mr-3" />
-          <h2 className="text-2xl font-semibold text-gray-900">Database Management</h2>
+          <h2 className="text-2xl font-semibold text-gray-900">{vocab.databaseSection}</h2>
         </div>
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-          <h3 className="text-sm font-semibold text-red-800 mb-2">⚠️ Danger Zone</h3>
+          <h3 className="text-sm font-semibold text-red-800 mb-2">⚠️ {vocab.dangerZone}</h3>
           <p className="text-sm text-red-700">
             These actions are irreversible. Please proceed with caution.
           </p>
@@ -191,7 +363,7 @@ export function Utils() {
           className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-lg shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors"
         >
           <Trash2 className="h-5 w-5 mr-2" />
-          Purge Database
+          {vocab.purgeButton}
         </button>
         <p className="mt-3 text-sm text-gray-500">
           This will permanently delete all files, records, validation errors, and logs from the database.
@@ -225,14 +397,14 @@ export function Utils() {
                 disabled={purging}
                 className="flex-1 px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:cursor-not-allowed transition-colors"
               >
-                Cancel
+                {vocab.cancelButton}
               </button>
               <button
                 onClick={purgeDatabase}
                 disabled={purging}
                 className="flex-1 px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
               >
-                {purging ? 'Purging...' : 'Yes, Purge Everything'}
+                {purging ? 'Processing...' : vocab.confirmButton}
               </button>
             </div>
           </div>
