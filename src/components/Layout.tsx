@@ -1,5 +1,6 @@
-import { ReactNode } from 'react';
+import { ReactNode, useState, useEffect } from 'react';
 import { FileText, CheckSquare, Search, List, Settings } from 'lucide-react';
+import { Theme, getVocabulary } from '../lib/vocabulary';
 
 interface LayoutProps {
   children: ReactNode;
@@ -7,12 +8,54 @@ interface LayoutProps {
 }
 
 export function Layout({ children, currentPage }: LayoutProps) {
+  const [currentTheme, setCurrentTheme] = useState<Theme>('light');
+
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme') as Theme;
+    if (savedTheme) {
+      setCurrentTheme(savedTheme);
+    }
+
+    const handleStorageChange = () => {
+      const theme = localStorage.getItem('theme') as Theme;
+      if (theme) {
+        setCurrentTheme(theme);
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    const interval = setInterval(() => {
+      const theme = localStorage.getItem('theme') as Theme;
+      if (theme && theme !== currentTheme) {
+        setCurrentTheme(theme);
+      }
+    }, 100);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(interval);
+    };
+  }, [currentTheme]);
+
+  const vocab = getVocabulary(currentTheme);
+
+  useEffect(() => {
+    const pageNames = {
+      files: vocab.navFileOverview,
+      tasks: vocab.navTasks,
+      records: vocab.navRecords,
+      search: vocab.navTINSearch,
+      utils: vocab.navUtils
+    };
+    document.title = `${pageNames[currentPage]} - ${vocab.appTitle}`;
+  }, [currentPage, vocab]);
+
   const navItems = [
-    { id: 'files', label: 'File Overview', icon: FileText, href: '#files' },
-    { id: 'tasks', label: 'Tasks', icon: CheckSquare, href: '#tasks' },
-    { id: 'records', label: 'Records', icon: List, href: '#records' },
-    { id: 'search', label: 'TIN Search', icon: Search, href: '#search' },
-    { id: 'utils', label: 'Utils', icon: Settings, href: '#utils' },
+    { id: 'files', label: vocab.navFileOverview, icon: FileText, href: '#files' },
+    { id: 'tasks', label: vocab.navTasks, icon: CheckSquare, href: '#tasks' },
+    { id: 'records', label: vocab.navRecords, icon: List, href: '#records' },
+    { id: 'search', label: vocab.navTINSearch, icon: Search, href: '#search' },
+    { id: 'utils', label: vocab.navUtils, icon: Settings, href: '#utils' },
   ];
 
   return (
@@ -24,7 +67,7 @@ export function Layout({ children, currentPage }: LayoutProps) {
               <div className="flex-shrink-0 flex items-center">
                 <FileText className="h-8 w-8 text-blue-600" />
                 <span className="ml-2 text-xl font-semibold text-gray-900">
-                  AEOI Exchange Service
+                  {vocab.appTitle}
                 </span>
               </div>
               <div className="hidden sm:ml-8 sm:flex sm:space-x-4">
@@ -59,7 +102,7 @@ export function Layout({ children, currentPage }: LayoutProps) {
       <footer className="bg-white border-t border-gray-200 mt-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <p className="text-center text-sm text-gray-500">
-            AEOI Exchange Service (DAC2/CRS) - MVP Demo
+            {vocab.footerText}
           </p>
         </div>
       </footer>
