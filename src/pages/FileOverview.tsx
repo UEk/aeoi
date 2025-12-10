@@ -13,6 +13,7 @@ export function FileOverview() {
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [showPurgeConfirm, setShowPurgeConfirm] = useState(false);
   const [purging, setPurging] = useState(false);
+  const [fileErrors, setFileErrors] = useState<Record<string, { errors: number; warnings: number }>>({});
 
   const loadFiles = async () => {
     setLoading(true);
@@ -30,6 +31,32 @@ export function FileOverview() {
 
       if (error) throw error;
       setFiles(data || []);
+
+      if (data && data.length > 0) {
+        const fileIds = data.map(f => f.file_id);
+        const { data: errorsData } = await supabase
+          .from('validation_error')
+          .select('file_id, level')
+          .in('file_id', fileIds)
+          .is('record_id', null);
+
+        const errorCounts: Record<string, { errors: number; warnings: number }> = {};
+
+        if (errorsData) {
+          errorsData.forEach(err => {
+            if (!errorCounts[err.file_id]) {
+              errorCounts[err.file_id] = { errors: 0, warnings: 0 };
+            }
+            if (err.level === 'ERROR') {
+              errorCounts[err.file_id].errors++;
+            } else if (err.level === 'WARNING') {
+              errorCounts[err.file_id].warnings++;
+            }
+          });
+        }
+
+        setFileErrors(errorCounts);
+      }
     } catch (error) {
       console.error('Error loading files:', error);
     } finally {
@@ -733,6 +760,9 @@ export function FileOverview() {
                   Period
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Validation
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Received
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -743,52 +773,75 @@ export function FileOverview() {
             <tbody className="bg-white divide-y divide-gray-200">
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-4 text-center text-sm text-gray-500">
+                  <td colSpan={7} className="px-6 py-4 text-center text-sm text-gray-500">
                     Loading...
                   </td>
                 </tr>
               ) : files.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-4 text-center text-sm text-gray-500">
+                  <td colSpan={7} className="px-6 py-4 text-center text-sm text-gray-500">
                     No files found
                   </td>
                 </tr>
               ) : (
-                files.map((file) => (
-                  <tr key={file.file_id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {file.original_message_ref_id || <span className="text-red-600">Missing</span>}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <StatusBadge status={file.status} />
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {file.jurisdiction || '-'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {file.reporting_period || '-'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {formatDate(file.received_at)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      {file.status === 'RECEIVED' && (
-                        <button
-                          onClick={async () => {
-                            setProcessingId(file.file_id);
-                            const xmlContent = `<dummy>${file.message_ref_id}</dummy>`;
-                            await processFile(file.file_id, xmlContent, file.correlation_id);
-                            setProcessingId(null);
-                          }}
-                          disabled={processingId === file.file_id}
-                          className="text-blue-600 hover:text-blue-800 disabled:text-gray-400 disabled:cursor-not-allowed"
-                        >
-                          {processingId === file.file_id ? 'Processing...' : 'Process'}
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                ))
+                files.map((file) => {
+                  const errorCount = fileErrors[file.file_id];
+                  const hasErrors = errorCount && (errorCount.errors > 0 || errorCount.warnings > 0);
+
+                  return (
+                    <tr key={file.file_id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {file.original_message_ref_id || <span className="text-red-600">Missing</span>}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <StatusBadge status={file.status} />
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {file.jurisdiction || '-'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {file.reporting_period || '-'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        {hasErrors ? (
+                          <div className="flex items-center gap-2">
+                            {errorCount.errors > 0 && (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
+                                {errorCount.errors} error{errorCount.errors !== 1 ? 's' : ''}
+                              </span>
+                            )}
+                            {errorCount.warnings > 0 && (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
+                                {errorCount.warnings} warning{errorCount.warnings !== 1 ? 's' : ''}
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-gray-400">-</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {formatDate(file.received_at)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        {file.status === 'RECEIVED' && (
+                          <button
+                            onClick={async () => {
+                              setProcessingId(file.file_id);
+                              const xmlContent = `<dummy>${file.message_ref_id}</dummy>`;
+                              await processFile(file.file_id, xmlContent, file.correlation_id);
+                              setProcessingId(null);
+                            }}
+                            disabled={processingId === file.file_id}
+                            className="text-blue-600 hover:text-blue-800 disabled:text-gray-400 disabled:cursor-not-allowed"
+                          >
+                            {processingId === file.file_id ? 'Processing...' : 'Process'}
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
