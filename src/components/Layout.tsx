@@ -1,9 +1,9 @@
 import { ReactNode } from 'react';
-import { FileText, CheckSquare, Search, List } from 'lucide-react';
+import { FileText, CheckSquare, Search, List, Settings } from 'lucide-react';
 
 interface LayoutProps {
   children: ReactNode;
-  currentPage: 'files' | 'tasks' | 'records' | 'search';
+  currentPage: 'files' | 'tasks' | 'records' | 'search' | 'utils';
 }
 
 export function Layout({ children, currentPage }: LayoutProps) {
@@ -12,6 +12,7 @@ export function Layout({ children, currentPage }: LayoutProps) {
     { id: 'tasks', label: 'Tasks', icon: CheckSquare, href: '#tasks' },
     { id: 'records', label: 'Records', icon: List, href: '#records' },
     { id: 'search', label: 'TIN Search', icon: Search, href: '#search' },
+    { id: 'utils', label: 'Utils', icon: Settings, href: '#utils' },
   ];
 
   return (

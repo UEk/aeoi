@@ -4,8 +4,9 @@ import { FileOverview } from './pages/FileOverview';
 import { TaskView } from './pages/TaskView';
 import { RecordView } from './pages/RecordView';
 import { TINSearch } from './pages/TINSearch';
+import { Utils } from './pages/Utils';
 
-type Page = 'files' | 'tasks' | 'records' | 'search';
+type Page = 'files' | 'tasks' | 'records' | 'search' | 'utils';
 
 function App() {
   const [currentPage, setCurrentPage] = useState<Page>('files');
@@ -13,7 +14,7 @@ function App() {
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash.slice(1) as Page;
-      if (['files', 'tasks', 'records', 'search'].includes(hash)) {
+      if (['files', 'tasks', 'records', 'search', 'utils'].includes(hash)) {
         setCurrentPage(hash);
       } else {
         setCurrentPage('files');
@@ -35,6 +36,8 @@ function App() {
         return <RecordView />;
       case 'search':
         return <TINSearch />;
+      case 'utils':
+        return <Utils />;
       default:
         return <FileOverview />;
     }

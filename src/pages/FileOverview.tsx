@@ -11,8 +11,6 @@ export function FileOverview() {
   const [filter, setFilter] = useState<string>('ALL');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [processingId, setProcessingId] = useState<string | null>(null);
-  const [showPurgeConfirm, setShowPurgeConfirm] = useState(false);
-  const [purging, setPurging] = useState(false);
   const [fileErrors, setFileErrors] = useState<Record<string, { errors: number; warnings: number }>>({});
 
   const loadFiles = async () => {
@@ -67,36 +65,6 @@ export function FileOverview() {
   useEffect(() => {
     loadFiles();
   }, [filter]);
-
-  const purgeDatabase = async () => {
-    setPurging(true);
-    try {
-      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/purge-database`;
-      const { data: { session } } = await supabase.auth.getSession();
-
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session?.access_token || import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.message || 'Purge failed');
-      }
-
-      setShowPurgeConfirm(false);
-      loadFiles();
-    } catch (error) {
-      console.error('Purge error:', error);
-      alert(`Purge failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    } finally {
-      setPurging(false);
-    }
-  };
 
   const processFile = async (fileId: string, xmlContent: string, correlationId: string) => {
     try {
@@ -671,12 +639,6 @@ export function FileOverview() {
             <Upload className="h-4 w-4 mr-2" />
             {uploading ? 'Uploading...' : 'Upload'}
           </button>
-          <button
-            onClick={() => setShowPurgeConfirm(true)}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-          >
-            Purge Database
-          </button>
         </div>
         {selectedFile && (
           <p className="mt-2 text-sm text-gray-500">
@@ -684,33 +646,6 @@ export function FileOverview() {
           </p>
         )}
       </div>
-
-      {showPurgeConfirm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl p-6 max-w-sm mx-4">
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Purge Database</h3>
-            <p className="text-sm text-gray-600 mb-6">
-              This action will permanently delete all files, records, and logs from the database. This cannot be undone.
-            </p>
-            <div className="flex space-x-3">
-              <button
-                onClick={() => setShowPurgeConfirm(false)}
-                disabled={purging}
-                className="flex-1 px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:cursor-not-allowed"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={purgeDatabase}
-                disabled={purging}
-                className="flex-1 px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:bg-gray-300 disabled:cursor-not-allowed"
-              >
-                {purging ? 'Purging...' : 'Purge'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       <div className="bg-white shadow rounded-lg">
         <div className="px-6 py-4 border-b border-gray-200">

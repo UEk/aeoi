@@ -1,3 +1,232 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer utilities {
+  [data-theme="dark"] body {
+    background-color: rgb(17 24 39);
+    color: rgb(255 255 255);
+  }
+
+  [data-theme="dark"] .bg-gray-50 {
+    background-color: rgb(17 24 39) !important;
+  }
+
+  [data-theme="dark"] .bg-white {
+    background-color: rgb(31 41 55) !important;
+  }
+
+  [data-theme="dark"] .text-gray-900 {
+    color: rgb(243 244 246) !important;
+  }
+
+  [data-theme="dark"] .text-gray-600 {
+    color: rgb(209 213 219) !important;
+  }
+
+  [data-theme="dark"] .text-gray-500 {
+    color: rgb(156 163 175) !important;
+  }
+
+  [data-theme="dark"] .border-gray-200 {
+    border-color: rgb(55 65 81) !important;
+  }
+
+  [data-theme="dark"] .border-gray-300 {
+    border-color: rgb(75 85 99) !important;
+  }
+
+  [data-theme="dark"] .hover\:bg-gray-50:hover {
+    background-color: rgb(55 65 81) !important;
+  }
+
+  [data-theme="ocean"] body {
+    background-color: rgb(240 249 255);
+    color: rgb(12 74 110);
+  }
+
+  [data-theme="ocean"] .bg-gray-50 {
+    background-color: rgb(240 249 255) !important;
+  }
+
+  [data-theme="ocean"] .text-gray-900 {
+    color: rgb(12 74 110) !important;
+  }
+
+  [data-theme="ocean"] .text-gray-600 {
+    color: rgb(14 116 144) !important;
+  }
+
+  [data-theme="ocean"] .border-gray-200 {
+    border-color: rgb(186 230 253) !important;
+  }
+
+  [data-theme="ocean"] .bg-blue-600 {
+    background-color: rgb(8 145 178) !important;
+  }
+
+  [data-theme="ocean"] .hover\:bg-blue-700:hover {
+    background-color: rgb(6 182 212) !important;
+  }
+
+  [data-theme="forest"] body {
+    background-color: rgb(240 253 244);
+    color: rgb(20 83 45);
+  }
+
+  [data-theme="forest"] .bg-gray-50 {
+    background-color: rgb(240 253 244) !important;
+  }
+
+  [data-theme="forest"] .text-gray-900 {
+    color: rgb(20 83 45) !important;
+  }
+
+  [data-theme="forest"] .text-gray-600 {
+    color: rgb(22 101 52) !important;
+  }
+
+  [data-theme="forest"] .border-gray-200 {
+    border-color: rgb(187 247 208) !important;
+  }
+
+  [data-theme="forest"] .bg-blue-600 {
+    background-color: rgb(5 150 105) !important;
+  }
+
+  [data-theme="forest"] .hover\:bg-blue-700:hover {
+    background-color: rgb(4 120 87) !important;
+  }
+
+  [data-theme="sunset"] body {
+    background-color: rgb(255 247 237);
+    color: rgb(154 52 18);
+  }
+
+  [data-theme="sunset"] .bg-gray-50 {
+    background-color: rgb(255 247 237) !important;
+  }
+
+  [data-theme="sunset"] .text-gray-900 {
+    color: rgb(154 52 18) !important;
+  }
+
+  [data-theme="sunset"] .text-gray-600 {
+    color: rgb(194 65 12) !important;
+  }
+
+  [data-theme="sunset"] .border-gray-200 {
+    border-color: rgb(254 215 170) !important;
+  }
+
+  [data-theme="sunset"] .bg-blue-600 {
+    background-color: rgb(234 88 12) !important;
+  }
+
+  [data-theme="sunset"] .hover\:bg-blue-700:hover {
+    background-color: rgb(249 115 22) !important;
+  }
+
+  [data-theme="midnight"] body {
+    background-color: rgb(15 23 42);
+    color: rgb(248 250 252);
+  }
+
+  [data-theme="midnight"] .bg-gray-50 {
+    background-color: rgb(2 6 23) !important;
+  }
+
+  [data-theme="midnight"] .bg-white {
+    background-color: rgb(15 23 42) !important;
+  }
+
+  [data-theme="midnight"] .text-gray-900 {
+    color: rgb(248 250 252) !important;
+  }
+
+  [data-theme="midnight"] .text-gray-600 {
+    color: rgb(148 163 184) !important;
+  }
+
+  [data-theme="midnight"] .text-gray-500 {
+    color: rgb(100 116 139) !important;
+  }
+
+  [data-theme="midnight"] .border-gray-200 {
+    border-color: rgb(30 41 59) !important;
+  }
+
+  [data-theme="midnight"] .border-gray-300 {
+    border-color: rgb(51 65 85) !important;
+  }
+
+  [data-theme="midnight"] .hover\:bg-gray-50:hover {
+    background-color: rgb(30 41 59) !important;
+  }
+
+  [data-theme="midnight"] .bg-blue-600 {
+    background-color: rgb(96 165 250) !important;
+  }
+
+  [data-theme="midnight"] .hover\:bg-blue-700:hover {
+    background-color: rgb(59 130 246) !important;
+  }
+
+  [data-theme="nordic"] body {
+    background-color: rgb(248 250 252);
+    color: rgb(15 23 42);
+  }
+
+  [data-theme="nordic"] .bg-gray-50 {
+    background-color: rgb(248 250 252) !important;
+  }
+
+  [data-theme="nordic"] .text-gray-900 {
+    color: rgb(15 23 42) !important;
+  }
+
+  [data-theme="nordic"] .text-gray-600 {
+    color: rgb(71 85 105) !important;
+  }
+
+  [data-theme="nordic"] .border-gray-200 {
+    border-color: rgb(226 232 240) !important;
+  }
+
+  [data-theme="nordic"] .bg-blue-600 {
+    background-color: rgb(71 85 105) !important;
+  }
+
+  [data-theme="nordic"] .hover\:bg-blue-700:hover {
+    background-color: rgb(51 65 85) !important;
+  }
+
+  [data-theme="warm"] body {
+    background-color: rgb(254 252 232);
+    color: rgb(120 53 15);
+  }
+
+  [data-theme="warm"] .bg-gray-50 {
+    background-color: rgb(254 252 232) !important;
+  }
+
+  [data-theme="warm"] .text-gray-900 {
+    color: rgb(120 53 15) !important;
+  }
+
+  [data-theme="warm"] .text-gray-600 {
+    color: rgb(146 64 14) !important;
+  }
+
+  [data-theme="warm"] .border-gray-200 {
+    border-color: rgb(254 243 199) !important;
+  }
+
+  [data-theme="warm"] .bg-blue-600 {
+    background-color: rgb(180 83 9) !important;
+  }
+
+  [data-theme="warm"] .hover\:bg-blue-700:hover {
+    background-color: rgb(217 119 6) !important;
+  }
+}
