@@ -458,16 +458,14 @@ export function FileOverview() {
         }
       }
 
-      if (!jurisdiction || jurisdiction !== 'SE') {
+      if (jurisdiction && jurisdiction !== 'SE') {
         const lineNumber = jurisdiction ? findLineNumber(content, jurisdiction) : null;
         const snippet = lineNumber ? extractSnippet(content, lineNumber) : null;
 
         validationErrors.push({
           file_id: fileData.file_id,
           code: '50012',
-          message: jurisdiction
-            ? `Invalid ReceivingCountry: ${jurisdiction}. Only SE (Sweden) is accepted (Validation Rule 50012)`
-            : 'ReceivingCountry could not be extracted from XML (Validation Rule 50012)',
+          message: 'The records contained in the CRS payload file are not meant for the receiving Competent Authority, but should have been provided to another jurisdiction.',
           level: 'ERROR',
           line_number: lineNumber,
           xml_snippet: snippet,
