@@ -88,7 +88,6 @@ export function FileOverview() {
         throw new Error(result.message || 'Purge failed');
       }
 
-      alert('Database purged successfully');
       setShowPurgeConfirm(false);
       loadFiles();
     } catch (error) {
