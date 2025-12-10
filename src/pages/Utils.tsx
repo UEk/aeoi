@@ -183,7 +183,6 @@ export function Utils() {
       }
 
       setShowPurgeConfirm(false);
-      alert('Database purged successfully!');
     } catch (error) {
       console.error('Purge error:', error);
       alert(`Purge failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
