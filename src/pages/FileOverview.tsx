@@ -468,7 +468,7 @@ export function FileOverview() {
           message: jurisdiction
             ? `Invalid ReceivingCountry: ${jurisdiction}. Only SE (Sweden) is accepted (Validation Rule 50012)`
             : 'ReceivingCountry could not be extracted from XML (Validation Rule 50012)',
-          level: 'WARNING',
+          level: 'ERROR',
           line_number: lineNumber,
           xml_snippet: snippet,
         });
