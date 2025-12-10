@@ -85,7 +85,6 @@ export function TaskView() {
 
       if (error) throw error;
       loadTasks();
-      alert('Task status updated successfully');
     } catch (error: any) {
       alert(`Failed to update task: ${error.message}`);
     }
