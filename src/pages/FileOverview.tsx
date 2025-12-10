@@ -495,7 +495,6 @@ export function FileOverview() {
         },
       });
 
-      alert('File uploaded successfully! Processing...');
       setSelectedFile(null);
       loadFiles();
 
